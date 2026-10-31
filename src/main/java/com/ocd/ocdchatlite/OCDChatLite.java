@@ -17,7 +17,7 @@ public final class OCDChatLite extends JavaPlugin {
         config = getConfig();
         manager = new ChatTypeManager(config);
 
-        getServer().getPluginManager().registerEvents(new ChatListener(manager), this);
+        getServer().getPluginManager().registerEvents(new ChatListener(manager, config), this);
     }
 
     public static ChatTypeManager getManager() {

@@ -1,12 +1,17 @@
+# ===== [ ERROR MESSAGES ] =====
+messages:
+  # Message shown to a player when no one receives their message (e.g., out of range).
+  nobody_saw: "<red>Nobody saw your message</red>"
+
+# ===== [ CHAT SETTINGS ] =====
 chat:
   types:
     global_chat:
       # Prefix to activate global chat. Example: !Hello
       prefix: "!"
-      # Required permission to use (leave empty for public access)
-      permission: ""
       # Message format: {player} = player name, {message} = message text
-      format: "[!] [{player}] {message}"
+      # Supports MiniMessage formatting.
+      format: "<yellow>[G]</yellow> [{player}] <gray>{message}</gray>"
       # Message broadcast distance:
       # -2 = unlimited (entire server)
       # -1 = same world only
@@ -16,9 +21,8 @@ chat:
     local_chat:
       # Prefix for local chat (empty = default chat)
       prefix: ""
-      # Permission required (empty = available to all)
-      permission: ""
       # Message format for local chat
-      format: "[?] [{player}] {message}"
+      # Supports MiniMessage formatting.
+      format: "<yellow>[L]</yellow> [{player}] <gray>{message}</gray>"
       # Messages are visible only within 48 blocks
       distance: 48
