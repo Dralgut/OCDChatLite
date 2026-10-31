@@ -1,0 +1,8 @@
+name: OCDChatLite
+version: '${version}'
+
+main: com.ocd.ocdchatlite.OCDChatLite
+api-version: '1.21'
+load: POSTWORLD
+
+authors: [ Dralgut ]

@@ -1,0 +1,24 @@
+chat:
+  types:
+    global_chat:
+      # Prefix to activate global chat. Example: !Hello
+      prefix: "!"
+      # Required permission to use (leave empty for public access)
+      permission: ""
+      # Message format: {player} = player name, {message} = message text
+      format: "[!] [{player}] {message}"
+      # Message broadcast distance:
+      # -2 = unlimited (entire server)
+      # -1 = same world only
+      # >0 = radius in blocks
+      distance: -2
+
+    local_chat:
+      # Prefix for local chat (empty = default chat)
+      prefix: ""
+      # Permission required (empty = available to all)
+      permission: ""
+      # Message format for local chat
+      format: "[?] [{player}] {message}"
+      # Messages are visible only within 48 blocks
+      distance: 48
