@@ -48,7 +48,7 @@ public class ChatListener implements Listener {
         message = message.substring(type.prefix().length()).stripLeading();
         if (message.isEmpty()) return;
 
-        Component formatedMessage = type.format().format(sender.getName(), PLAIN.deserialize(message));
+        Component formatedMessage = type.format().format(sender, PLAIN.deserialize(message));
 
         sendMessage(sender, formatedMessage, type.distance());
     }
@@ -72,7 +72,6 @@ public class ChatListener implements Listener {
                         player.sendMessage(message);
                         ds = false;
                     }
-
             }
 
             if (ds)
