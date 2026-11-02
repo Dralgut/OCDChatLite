@@ -5,23 +5,27 @@ import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class OrangeFormat {
-    private final static MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
-
     private final Section[] sections;
 
-    private enum SectionType {LITERAL, PLAYER, MESSAGE, PAPI}
-    private record Section(SectionType type, Component value, PlaceholderExpansion expansion, String params) {}
+    private record Section(SectionType type, Component value, Style style, PlaceholderExpansion expansion,
+                           String args) {
+    }
+
+    private enum SectionType {LITERAL, PLAYER, MESSAGE, PAPI, STYLE}
 
     public OrangeFormat(String format) {
         List<Section> parsed = parse(format);
-        this.sections = parsed.toArray(Section[]::new);
+        sections = parsed.toArray(Section[]::new);
     }
 
     public Component format(Player player, Component message) {
@@ -29,65 +33,116 @@ public class OrangeFormat {
         Component playerName = Component.text(player.getName());
         for (Section section : sections) {
             switch (section.type) {
-                case LITERAL -> builder.append(section.value);
-                case PLAYER -> builder.append(playerName);
-                case MESSAGE -> builder.append(message);
+                case LITERAL -> builder.append(section.value());
+                case PLAYER -> builder.append(playerName.style(section.style()));
+                case MESSAGE -> builder.append(message.style(section.style()));
                 case PAPI -> {
-                    if (section.expansion != null) {
-                        String result = section.expansion.onRequest(player, section.params);
-
-                        if (result != null)
-                            builder.append(Component.text(result));
-                    }
+                    String value = section.expansion().onRequest(player, section.args());
+                    if (value != null) builder.append(Component.text(value, section.style()));
                 }
             }
         }
         return builder.build();
     }
 
-    private List<Section> parse(String format) {
+    private static List<Section> parse(String format) {
         List<Section> list = new ArrayList<>();
+        Style.Builder sb = Style.style();
 
         int lp = 0;
-        int sp = format.indexOf('{');
+        int sp = format.indexOf('<');
+        int ep;
 
-        while (sp >= 0) {
-            int ep = format.indexOf('}', sp + 1);
-            if (ep < 0) break;
+        while (lp <= sp) {
+            ep = format.indexOf('>', sp + 1);
+            if (ep == -1) break;
 
             String placeholder = format.substring(sp + 1, ep);
-            SectionType type = placeholder.startsWith("papi:") ? SectionType.PAPI : switch (placeholder) {
+            SectionType type = placeholder.startsWith("papi:") && OCDChatLite.isPapiEnabled() ? SectionType.PAPI : placeholder.startsWith("color:") ? SectionType.STYLE : switch (placeholder) {
                 case "player" -> SectionType.PLAYER;
                 case "message" -> SectionType.MESSAGE;
+                case "reset", "black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple", "gold",
+                     "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white", "b", "i",
+                     "u", "s", "o", "/b", "/i", "/u", "/s", "/o" -> SectionType.STYLE;
                 default -> null;
             };
 
             if (type != null) {
-                if (sp > lp) list.add(new Section(SectionType.LITERAL, MINI_MESSAGE.deserialize(format.substring(lp, sp)), null, null));
+                if (sp - lp > 0)
+                    list.add(new Section(SectionType.LITERAL, Component.text(format.substring(lp, sp), sb.build()), null, null, null));
+                lp = ep + 1;
                 if (type == SectionType.PAPI) {
                     String papi = placeholder.substring(5);
                     int sep = papi.indexOf('_');
 
-                    if (sep > 0 && sep < papi.length() - 1) {
-                        String identifier = papi.substring(0, sep);
-                        String params = papi.substring(sep + 1);
+                    String identifier = sep == -1 ? papi : papi.substring(0, sep);
+                    String args = sep == -1 ? "" : papi.substring(sep + 1);
 
-                        PlaceholderExpansion expansion = null;
-
-                        if (OCDChatLite.isPapiEnabled())
-                            expansion = PlaceholderAPIPlugin.getInstance().getLocalExpansionManager().getExpansion(identifier);
-
-                        list.add(new Section(SectionType.PAPI, null, expansion, params));
-                    } else list.add(new Section(SectionType.LITERAL, MINI_MESSAGE.deserialize(format.substring(sp, ep + 1)), null, null));
-                } else list.add(new Section(type, null, null, null));
-                lp = ep + 1;
+                    PlaceholderExpansion expansion = PlaceholderAPIPlugin.getInstance().getLocalExpansionManager().getExpansion(identifier);
+                    if (expansion != null)
+                        list.add(new Section(SectionType.PAPI, null, sb.build(), expansion, args));
+                    else
+                        list.add(new Section(SectionType.LITERAL, Component.text("<" + placeholder + ">", sb.build()), null, null, null));
+                } else if (type == SectionType.STYLE) {
+                    if (placeholder.startsWith("color:")) {
+                        String color = placeholder.substring(6);
+                        sb.color(parseColorOrDefault(color));
+                    } else switch (placeholder) {
+                        case "reset" -> sb = Style.style();
+                        case "black" -> sb.color(NamedTextColor.BLACK);
+                        case "dark_blue" -> sb.color(NamedTextColor.DARK_BLUE);
+                        case "dark_green" -> sb.color(NamedTextColor.DARK_GREEN);
+                        case "dark_aqua" -> sb.color(NamedTextColor.DARK_AQUA);
+                        case "dark_red" -> sb.color(NamedTextColor.DARK_RED);
+                        case "dark_purple" -> sb.color(NamedTextColor.DARK_PURPLE);
+                        case "gold" -> sb.color(NamedTextColor.GOLD);
+                        case "gray" -> sb.color(NamedTextColor.GRAY);
+                        case "dark_gray" -> sb.color(NamedTextColor.DARK_GRAY);
+                        case "blue" -> sb.color(NamedTextColor.BLUE);
+                        case "green" -> sb.color(NamedTextColor.GREEN);
+                        case "aqua" -> sb.color(NamedTextColor.AQUA);
+                        case "red" -> sb.color(NamedTextColor.RED);
+                        case "light_purple" -> sb.color(NamedTextColor.LIGHT_PURPLE);
+                        case "yellow" -> sb.color(NamedTextColor.YELLOW);
+                        case "white" -> sb.color(NamedTextColor.WHITE);
+                        case "b" -> sb.decoration(TextDecoration.BOLD, true);
+                        case "i" -> sb.decoration(TextDecoration.ITALIC, true);
+                        case "u" -> sb.decoration(TextDecoration.UNDERLINED, true);
+                        case "s" -> sb.decoration(TextDecoration.STRIKETHROUGH, true);
+                        case "o" -> sb.decoration(TextDecoration.OBFUSCATED, true);
+                        case "/b" -> sb.decoration(TextDecoration.BOLD, false);
+                        case "/i" -> sb.decoration(TextDecoration.ITALIC, false);
+                        case "/u" -> sb.decoration(TextDecoration.UNDERLINED, false);
+                        case "/s" -> sb.decoration(TextDecoration.STRIKETHROUGH, false);
+                        case "/o" -> sb.decoration(TextDecoration.OBFUSCATED, false);
+                    }
+                } else list.add(new Section(type, null, sb.build(), null, null));
             }
-
-            sp = format.indexOf('{', ep + 1);
+            sp = format.indexOf('<', ep);
         }
+        if (lp < format.length())
+            list.add(new Section(SectionType.LITERAL, Component.text(format.substring(lp), sb.build()), null, null, null));
 
-        if (lp < format.length()) list.add(new Section(SectionType.LITERAL, MINI_MESSAGE.deserialize(format.substring(lp)), null, null));
+        for (int i = 1; i < list.size(); i++) {
+            Section ns = list.get(i);
+            Section ps = list.get(i - 1);
 
+            if (ns.type() == SectionType.LITERAL && ps.type() == SectionType.LITERAL) {
+                list.remove(i--);
+                TextComponent.Builder cb = Component.text();
+                cb.append(ps.value());
+                cb.append(ns.value());
+                list.set(i, new Section(SectionType.LITERAL, cb.build(), null, null, null));
+            }
+        }
         return list;
+    }
+
+    private static TextColor parseColorOrDefault(String input) {
+        try {
+            return TextColor.color(Integer.parseInt(input.trim()));
+        } catch (NumberFormatException e) {
+            return NamedTextColor.WHITE;
+        }
     }
 }

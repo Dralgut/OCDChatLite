@@ -7,3 +7,16 @@ load: POSTWORLD
 
 authors: [ Dralgut ]
 softdepend: ["PlaceholderAPI"]
+
+commands:
+  ocdchatlite:
+    description: OCDChatLite management
+    usage: /ocdchatlite
+    aliases:
+      - ocdcl
+    permission: ocdchatlite.reload
+    permission-message: "§cYou dont have permission"
+
+permissions:
+  ocdchatlite.reload:
+    default: op

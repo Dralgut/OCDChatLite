@@ -36,7 +36,7 @@ public class ChatListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
-    public void onChat(AsyncChatEvent event){
+    public void onChat(AsyncChatEvent event) {
         event.setCancelled(true);
 
         String message = PLAIN.serialize(event.message());
@@ -57,11 +57,11 @@ public class ChatListener implements Listener {
         if (distance == UNLIMITED)
             for (Player player : Bukkit.getOnlinePlayers()) player.sendMessage(message);
         else {
-            boolean ds = true;
+            int pc = 0;
             if (distance == UNLIMITED_FOR_WORLD)
                 for (Player player : sender.getWorld().getPlayers()) {
                     player.sendMessage(message);
-                    ds = false;
+                    pc++;
                 }
             else {
                 Location sl = sender.getLocation();
@@ -70,11 +70,11 @@ public class ChatListener implements Listener {
                 for (Player player : sender.getWorld().getPlayers())
                     if (sl.distanceSquared(player.getLocation()) < sd) {
                         player.sendMessage(message);
-                        ds = false;
+                        pc++;
                     }
             }
 
-            if (ds)
+            if (pc <= 1)
                 sender.sendMessage(nobodySawMessage);
         }
     }

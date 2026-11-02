@@ -24,7 +24,7 @@ public class ChatTypeManager {
         for (String key : section.getKeys(false)) {
             String prefix = section.getString(key + ".prefix", "");
             OrangeFormat format = new OrangeFormat(section.getString(key + ".format", "{player}: {message}"));
-            double distance = section.getDouble(".distance", -2);
+            double distance = section.getDouble(key + ".distance", -2);
 
             list.add(new ChatType(prefix, format, distance));
         }
