@@ -28,7 +28,7 @@ chat:
 
 ## PlaceholderAPI integration
 ```
-<papi:placegolder> = %placeholder%
+<papi:placeholder> = %placeholder%
 ```
 
 ## OCDText format
